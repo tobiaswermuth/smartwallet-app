@@ -18,42 +18,38 @@ let Graph = React.createClass({
 
   onStateUpdate(data, signal) {
     this.setState(data)
-    if (this.state.loaded && !this.state.drawn){
+    if (this.state.neighbours){
       this.graph.render(this.state)
       this.graph.render(this.state)
       this.graph.updateHistory(this.state.navHistory)
-      previewActions.setState('drawn', true)
     }
 
     if (this.state.newNode) {
       this.graph.addNode(this.state.newNode)
-      // We update the state of the store to be in line with the state of the child
-
-      this.state.neighbours.push(this.state.newNode)
-      this.state.newNode = null
-      previewActions.setState('newNode', null)
+      previewActions.setState('newNode', null, true)
     }
 
     if(signal == 'redraw') {
       this.graph.render(this.state)
       this.graph.updateHistory(this.state.navHistory)
-    } else if ( signal == 'highlight') {
-      this.state.highlighted = data.highlighted
     }
   },
 
   componentDidMount() {
     this.notSync = true
     this.listenTo(GraphStore, this.onSync)
-    graphActions.eraseGraph()
+
+    // We get the state and erase the 'parent graph'
     graphActions.getState()
+    graphActions.eraseGraph()
     // Make sure we refresh our state every time we mount the component, this
     // then fires the drawing function from onStateUpdate
-    this.graph = new GraphD3(this.getGraphEl(), 'preview')
-    this.graph.addListener('select', this._handleSelectNode)
-    previewActions.getState()
-  },
+    this.graph = new GraphD3(this.getGraphEl())
 
+    this.graph.on('select', this._handleSelectNode)
+    this.graph.on('center-changed', this._handleCenterChange)
+    this.graph.on('view-node', this._handleViewNode)
+  },
 
   onSync(state, signal){
     if(!signal && this.notSync){
@@ -72,8 +68,6 @@ let Graph = React.createClass({
     graphActions.setState('neighbours', this.state.neighbours, true)
 
     graphActions.drawGraph()
-    previewActions.setState('drawn', false)
-    graphActions.setState('highlighted', null)
     if (this.graph) {
       this.graph.eraseGraph()
       this.graph.removeAllListeners()
@@ -95,6 +89,15 @@ let Graph = React.createClass({
     return (
       <div style={styles.chart} ref="graph"></div>
     )
+  },
+
+  // TODO NOT WORKING
+  _handleViewNode(node) {
+    previewActions.viewNode(node)
+  },
+
+  _handleCenterChange(node){
+    previewActions.navigateToNode(node)
   },
 
   _handleSelectNode(node) {

@@ -44,9 +44,11 @@ let NodeAddDefault = React.createClass({
     return title && title.trim()
   },
   submit() {
+    // TODO
+    // We need a common place to store the webId.
     if (!this.validates()) return false
     let {title, description, image} = this.state
-    nodeActions.create(this.user, title, description, image, this.state.type)
+    nodeActions.create(this.context.user, this.user, title, description, image, this.state.type)
   },
   render: function() {
     let {image} = this.state
@@ -70,10 +72,7 @@ let NodeAddDefault = React.createClass({
               onChange={({target}) => {this.setState({['title']: target.value})}} />
             <SelectField value={this.state.type} onChange={this._handleTypeChange} style={styles.select}>
               <MenuItem value="default" primaryText="Plain text" />
-              <MenuItem value="person" primaryText="Person" />
-              <MenuItem value="company" primaryText="Company" />
               <MenuItem value="image" primaryText="Image" />
-              <MenuItem value="event" primaryText="Event" />
             </SelectField>
           </div>
           <div style={styles.row}>

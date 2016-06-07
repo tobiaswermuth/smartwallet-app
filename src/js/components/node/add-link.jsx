@@ -1,6 +1,7 @@
 import React from 'react'
 import Radium from 'radium'
 import Reflux from 'reflux'
+import d3 from 'd3'
 
 import {FontIcon, Paper, SelectField, MenuItem} from 'material-ui'
 
@@ -19,10 +20,17 @@ let NodeAddLink = React.createClass({
     muiTheme: React.PropTypes.object
   },
   getInitialState() {
+    let centerNode = d3.selectAll('.node').filter(function(d) { return d.rank == 'center'})
+    let name = centerNode[0][0].__data__.name
+    if(name==null) name = centerNode[0][0].__data__.title
+    if(name==null) name = this.props.node
+
     return {
-      targetSelection: null,
+      targetSelection: 'end',
       start: null,
-      end: this.props.node,
+      startUri: null,
+      end: name,
+      endUri: this.props.node,
       type: 'knows'
     }
   },
@@ -33,24 +41,33 @@ let NodeAddLink = React.createClass({
   },
   // @TODO this validation is bullshit ofcourse :)
   validates() {
-    let {start, end, type} = this.state
-    return start && end && type
+    let {startUri, endUri, type} = this.state
+    return startUri && endUri && type
   },
   submit() {
     //@TODO show error
     if (!this.validates()) return false
-    let {start, end, type} = this.state
+    let {startUri, endUri, type} = this.state
     // We just pass the start node [object], end node [subject], and the type
     // The user is the WEBID
-    console.log(start,end)
-    nodeActions.link(start, end, type)
+    console.log('start:', startUri, 'end:', endUri, 'type:', type)
+    nodeActions.link(this.context.user, endUri, startUri, type)
   },
   getStyles() {
+    let {palette} = this.context.muiTheme
+    let color = palette.accent1Color
     let styles = {
       container: {
         flex: 1,
         display: 'flex',
         flexDirection: 'column'
+      },
+      containerTable: {
+        display: 'flex'
+      },
+      leftIcon: {
+        width: '35px'
+
       },
       graph: {
         background: 'rgba(0,0,0,0.1)',
@@ -58,12 +75,20 @@ let NodeAddLink = React.createClass({
         display: 'flex',
         flexDirection: 'column'
       },
+      icon: {
+        color: color,
+        margin: '40px 5px',
+        width: '20px'
+      },
       form: {
         backgroundColor: '#ffffff',
         padding: '16px'
       },
       row: {
         display: 'flex'
+      },
+      inner: {
+        flex: 5
       },
       select: {
         width: 'auto',
@@ -74,29 +99,58 @@ let NodeAddLink = React.createClass({
   },
   render: function() {
     let styles = this.getStyles()
-    let {start, end} = this.state
-
+    let {start, end , targetSelection} = this.state
     return (
       <div style={styles.container}>
         <div style={styles.graph}>
           <GraphPreview onSelect={this._handleNodeSelect}/>
         </div>
-        <Paper style={styles.form} rounded={false}>
-          <div style={styles.row}>
-            <NodeTarget selection={start} label="Start" onSelectTarget={this._handleSelectStartTarget}/>
-            <SelectField value={this.state.type} onChange={this._handleTypeChange} style={styles.select}>
-              <MenuItem value="generic" primaryText="Generic" />
-              <MenuItem value="knows" primaryText="Knows" />
-            </SelectField>
+        <div style={styles.containerTable}>
+          <div style={styles.leftIcon} onClick={this._handleSelectSwap}>
+            <FontIcon className="material-icons" style={styles.icon} color={styles.icon.color}>swap_vert</FontIcon>
           </div>
-          <div style={styles.row}>
-            <NodeTarget selection={end} label="End" onSelectTarget={this._handleSelectEndTarget}/>
+          <div style={styles.inner}>
+            <Paper style={styles.form} rounded={false}>
+              <div style={styles.row}>
+                <NodeTarget selection={start} field={'start'} targetSelection={targetSelection} onChangeEnd={this.handleChangeStart} onSelectTarget={this._handleSelectStartTarget}/>
+                <SelectField value={this.state.type} onChange={this._handleTypeChange} style={styles.select}>
+                  <MenuItem value="generic" primaryText="Generic" />
+                  <MenuItem value="knows" primaryText="Knows" />
+                </SelectField>
+              </div>
+              <div style={styles.row}>
+                <NodeTarget selection={end} field={'end'} targetSelection={targetSelection} onChangeEnd={this.handleChangeEnd} onSelectTarget={this._handleSelectEndTarget}/>
+              </div>
+            </Paper>
           </div>
-        </Paper>
+        </div>
       </div>
     )
   },
 
+  handleChangeEnd: function(event) {
+
+    this.setState({endUri: event.target.value,
+                  end : event.target.value
+    })
+
+  },
+  handleChangeStart: function(event) {
+
+    this.setState({startUri: event.target.value,
+                  start : event.target.value
+    })
+
+  },
+  _handleSelectSwap: function() {
+
+    this.setState({
+      start:this.state.end,
+      startUri:this.state.endUri,
+      end:this.state.start,
+      endUri:this.state.startUri
+    })
+  },
   _handleTypeChange(event, index, value) {
     this.setState({
       type: value
@@ -104,21 +158,31 @@ let NodeAddLink = React.createClass({
   },
 
   _handleNodeSelect(node) {
+    let name
+    if (node.name){
+      name = node.name
+    }
+    else if (node.title) {
+      name = node.title
+    }
+    else name=node.uri
+
     if (this.state.targetSelection) {
       this.setState({
-        [this.state.targetSelection]: node.uri,
+        [this.state.targetSelection]: name,
+        [this.state.targetSelection+'Uri']:node.uri,
         targetSelect: null
       })
     }
   },
+
   _handleSelectEndTarget(active) {
     this.setState({targetSelection: active && 'end' || null})
   },
 
   _handleSelectStartTarget(active) {
     this.setState({
-      targetSelection: active && 'start' || null
-    })
+      targetSelection: active && 'start' || null })
   }
 
 })
@@ -129,7 +193,20 @@ let NodeTarget = React.createClass({
   },
   getInitialState() {
     return {
+      selected: this.props.selection,
       active: false
+    }
+  },
+  componentDidUpdate(prevProps) {
+    if (prevProps!=this.props ) {
+      let active = false
+      if(this.props.field == this.props.targetSelection){
+        active = true
+      }
+      this.setState({
+        selected : this.props.selection,
+        active : active
+      })
     }
   },
   getStyles() {
@@ -152,7 +229,7 @@ let NodeTarget = React.createClass({
       },
       icon: {
         color: color,
-        margin: '4px 8px 0 0'
+        margin: '0px 8px 0 0'
       },
       inner: {
         flex: 1
@@ -166,6 +243,7 @@ let NodeTarget = React.createClass({
       }
     }
   },
+
   render() {
     let styles = this.getStyles()
     return (
@@ -173,16 +251,13 @@ let NodeTarget = React.createClass({
         <FontIcon className="material-icons" style={styles.icon} color={styles.icon.color}>gps_fixed</FontIcon>
         <div style={styles.inner}>
           <div style={styles.label}>{this.props.label}</div>
-          <div style={styles.value}>{this.props.selection || 'Select node'}</div>
+          <div style={styles.value}><input type="value" value={this.state.selected || 'Select node'} onChange={this.props.onChangeEnd}/></div>
         </div>
       </div>
     )
   },
   _handleTouchTap() {
     let active = !this.state.active
-    this.setState({
-      active: active
-    })
     this.props.onSelectTarget && this.props.onSelectTarget(active)
   }
 })

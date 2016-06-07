@@ -39,50 +39,22 @@ let Graph = React.createClass({
 
   onStateUpdate: function(data, signal) {
     if (data) this.setState(data)
-
-    if (!this.state.loaded) {
-      graphActions.getInitialGraphState()
-    }
-
-    if (this.state.loaded && !this.state.drawn){
+    if (this.state.neighbours){
       this.graph.render(this.state)
-      graphActions.setState('drawn', true)
+      this.graph.updateHistory(this.state.navHistory)
     }
 
     if (this.state.newNode) {
       this.graph.addNode(this.state.newNode)
-      this.state.neighbours.push(this.state.newNode)
-      graphActions.setState('neighbours', this.state.neighbours)
       // We update the state of the store to be in line with the state of the child
-      this.state.newNode = null
-      graphActions.setState('newNode', null)
+      graphActions.setState('newNode', null, true)
     }
-
     if(signal == 'redraw'){
       this.graph.render(this.state)
       this.graph.updateHistory(this.state.navHistory)
-    } else if ( signal == 'highlight') {
-      this.state.highlighted = data.highlighted
-    } else if ( signal == 'erase') {
-      graphActions.setState('drawn', false)
-      graphActions.setState('highlighted', null)
+    }  else if ( signal == 'erase') {
       this.graph.eraseGraph()
     }
-  },
-
-  // When we finish linking, we select the subjet of the triple.
-  linkSubject: function() {
-    graphActions.chooseSubject()
-  },
-
-  //When we start the linking, we first select the Object of the triple
-  linkObject: function() {
-    graphActions.chooseObject()
-  },
-
-  testAdd(){
-    // let destination = this.state.center
-    graphActions.createAndConnectNode(this.state.user, 'test', 'description')
   },
 
   addNode: function(type) {
@@ -91,21 +63,23 @@ let Graph = React.createClass({
   },
 
   componentDidMount: function() {
-    this.graph = new GraphD3(this.getGraphEl(), 'full')
+    // Instantiating the graph object.
+    this.graph = new GraphD3(this.getGraphEl())
+    // this.graph.on is the same as this.graph.addListener()
+    this.graph.on('center-changed', this._handleCenterChange)
     this.graph.on('view-node', this._handleViewNode)
     graphActions.getState()
   },
 
-  componentWillUpdate: function(){
-  },
-
-  componentDidUpdate: function() {
-  },
-
   componentWillUnmount: function(){
-    graphActions.setState('drawn', false)
-    graphActions.setState('highlighted', null)
-    if (this.graph) this.graph.eraseGraph()
+    if (this.graph) {
+      this.graph.eraseGraph()
+      this.graph.removeAllListeners()
+    }
+  },
+
+  _handleCenterChange(node){
+    graphActions.navigateToNode(node)
   },
 
   getStyles: function() {

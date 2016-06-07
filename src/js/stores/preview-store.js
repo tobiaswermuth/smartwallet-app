@@ -4,9 +4,6 @@ import previewActions from '../actions/preview-actions'
 import accountActions from '../actions/account'
 import d3Convertor from '../lib/d3-converter'
 
-import rdf from 'rdflib'
-let FOAF = rdf.Namespace('http://xmlns.com/foaf/0.1/')
-
 export default Reflux.createStore({
 
   listenables: [previewActions],
@@ -24,17 +21,13 @@ export default Reflux.createStore({
       neighbours: null,
       loaded: false,
       newNode: null,
-      newLink: null,
-      drawn: false,
-      highlighted: null,
-      linkSubject: null,
-      linkObject: null,
       // Keeps track of all the nodes we navigated to.
       navHistory: [],
       //These describe the ui
       showPinned: false,
       showSearch: false,
-      plusDrawerOpen: false
+      plusDrawerOpen: false,
+      activeNode: null
     }
   },
 
@@ -46,15 +39,12 @@ export default Reflux.createStore({
       neighbours: null,
       loaded: false,
       newNode: null,
-      newLink: null,
-      drawn: false,
-      highlighted: null,
-      linkSubject: null,
       navHistory: [],
       // UI related
       showPinned:false,
       showSearch: false,
-      plusDrawerOpen:false
+      plusDrawerOpen:false,
+      activeNode: null
     }
   },
 
@@ -62,29 +52,7 @@ export default Reflux.createStore({
       // No need to trigger here, since this is always called after the state
       // of the child component has been changed.
     this.state[key] = value
-
     if (flag) this.trigger(this.state)
-  },
-
-  onChooseSubject: function() {
-    // We choose the subject of the new link
-    if (this.state.highlighted) this.state.linkSubject = this.state.highlighted
-    else this.state.linkSubject = this.state.center.uri
-    this.trigger(this.state)
-
-    previewActions.linkTriple()
-  },
-
-  onChooseObject: function() {
-    // We choose the object of the new link
-    if (this.state.highlighted) this.state.linkObject = this.state.highlighted
-    else this.state.linkObject = this.state.center.uri
-    this.trigger(this.state)
-  },
-
-  onLinkTriple: function(){
-    // this.state.newLink = rdf.sym(this.state.linkSubject) + FOAF('knows') + rdf.sym(this.state.linkObject)
-    previewActions.writeTriple(this.state.linkSubject, FOAF('knows'), this.state.linkObject, ' ')
   },
 
   // This sends Graph.jsx and the Graph.js files a signal to add new ndoes to the graph
@@ -96,18 +64,9 @@ export default Reflux.createStore({
       // Now we tell d3 to draw a new adjacent node on the graph, with the info from
       // the triple file
       this.state.newNode = this.convertor.convertToD3('a', result.triples)
+      this.state.neighbours.push(this.state.newNode)
       this.trigger(this.state)
     })
-  },
-
-  onHighlight: function(node) {
-    if(!node) this.state.highlighted = null
-    else this.state.highlighted = node.uri
-    this.trigger(this.state, 'highlight')
-  },
-
-  onGetState: function(){
-    this.trigger( this.state)
   },
 
   onNavigateToNode: function(node){
@@ -131,10 +90,13 @@ export default Reflux.createStore({
         triples[i] = this.convertor.convertToD3('a', triples[i], i, triples.length - 1)
         this.state.neighbours.push(triples[i])
       }
-
-      this.state.highlighted = null
-      console.log('number 2')
       this.trigger(this.state, 'redraw')
     })
+  },
+
+  // NOT WORKING ATM.
+  onViewNode(node) {
+    this.state.activeNode = node
+    this.trigger(this.state)
   }
 })
