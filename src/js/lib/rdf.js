@@ -5,10 +5,11 @@
 import rdf from 'rdflib'
 
 export class Parser {
-  parse(text) {
+  parse(text, url) {
     return new Promise((resolve) =>{
       let payload = []
-      rdf.parse(text, rdf.graph(), 'http://ogog.og', 'text/turtle', (err, triples) => {
+      if (url) url = url.substring(0, url.lastIndexOf('/')+1)
+      rdf.parse(text, rdf.graph(), url, 'text/turtle', (err, triples) => {
         for (let i in triples.statements) {
           let statement = triples.statements[i]
           payload.push({

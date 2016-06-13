@@ -99,9 +99,10 @@ class GraphAgent extends HTTPAgent {
           writer.addTriple(triple.subject, triple.predicate, triple.object)
         }
         // We only check for the author if the rdf file has the author entry in it in the first place.
+        let eve = writer.g.statementsMatching(undefined, RDF('type'), rdf.sym('http://schema.org/Event'))
         let author = writer.g.statementsMatching(undefined, FOAF('maker'), undefined)
         if (author.length > 0) author = author[0].object.uri
-        if (author == webId) {
+        if (author == webId || eve.length > 0) {
           console.log('Write access granted')
           resolve(true)
         } else {
@@ -112,8 +113,7 @@ class GraphAgent extends HTTPAgent {
     })
   }
 
-
-  writeTriple(subject, predicate, object) {
+  writeTriple(subject, predicate, object, draw) {
     let writer = new Writer()
     subject = rdf.sym(subject)
     // First we fetch the triples at the webId/uri of the user adding the triple
@@ -123,8 +123,11 @@ class GraphAgent extends HTTPAgent {
           let triple = file.triples[i]
           writer.addTriple(triple.subject, triple.predicate, triple.object)
         }
-        writer.addTriple(subject, predicate, object)
-        // Then we serialize the object to Turtle and PUT it's address.
+        if(writer.addTriple(subject,predicate,object)){
+          if(draw && predicate.uri == SCHEMA('isRelatedTo').uri){
+            GraphActions.drawNewNode(object.uri)
+          }
+        }
         solid.web.put(subject.uri, writer.end()).then(resolve)
       })
     })
@@ -139,7 +142,7 @@ class GraphAgent extends HTTPAgent {
     return this.get(uri)
       .then((xhr) => {
         let parser = new Parser()
-        return parser.parse(xhr.response)
+        return parser.parse(xhr.response, xhr.responseURL)
         // Look at line 155 for clarifications if you dare.
       }).catch(()=>{
         console.log('The uri', uri, 'could not be resolved. Skipping')
