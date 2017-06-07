@@ -20,28 +20,11 @@ describe('solidAgentAgent', () => {
         email: []
       },
       Reputation: 0,
-      passport: {
-        number: null,
-        givenName: null,
-        familyName: null,
-        birthDate: null,
-        gender: null,
-        street: null,
-        streetAndNumber: null,
-        city: null,
-        zip: null,
-        state: null,
-        country: null
-      }
+      passports: [],
+      idCards: []
     }
-    it('Should correctly handle network errors', async() => {
-      const solidAgent = new SolidAgent()
-      return solidAgent.getUserInformation().then(res => {
-        expect(res).to.deep.equal(emptyUserProfile)
-      })
-    })
 
-    it('Should correctly invalid argument', async() => {
+    it('Should correctly process invalid argument', async() => {
       const solidAgent = new SolidAgent()
       return solidAgent.getUserInformation().then(res => {
         expect(res).to.deep.equal(emptyUserProfile)
@@ -49,6 +32,41 @@ describe('solidAgentAgent', () => {
     })
 
     it('Should correctly fetch and parse user info', async () => {
+      const firstIdCardFileResp = `\
+        @prefix : <#>.
+        @prefix pro: <./>.
+        @prefix p: <http://dbpedia.org/page/>.
+        @prefix SCH: \
+        <http://voag.linkedmodel.org/2.0/doc/2015/SCHEMA_voag-v2.0#>.
+        @prefix schem: <https://schema.org/>.
+        @prefix n0: <http://xmlns.com/foaf/0.1/>.
+        @prefix ont: <http://dbpedia.org/ontology/>.
+        @prefix n: <https://www.w3.org/2006/vcard/ns#>.
+        @prefix per: <https://www.w3.org/ns/person#>.
+
+        pro:idCard123
+            a p:Identity_document;
+            SCH:voag_ownedBy :owner;
+            schem:expires "1.1.18";
+            schem:identifier "12312421".
+
+        :owner
+            n0:familyName "Hamman";
+            n0:gender n:Female;
+            n0:givenName "Annika";
+            schem:address
+              [
+                ont:city "Berlin";
+                ont:country "Germany";
+                ont:state "Berlin";
+                n:postal-code "1234";
+                n:street-address "Waldemarstr. 97a"
+              ];
+            schem:birthDate "1.1.88";
+            schem:birthPlace "Wien";
+            per:countryOfBirth "Austria".
+      `
+
       const firstPhoneFileResp = `\
         @prefix pro: <./>.
         @prefix n0: <http://xmlns.com/foaf/0.1/>.
@@ -57,6 +75,7 @@ describe('solidAgentAgent', () => {
           n0:phone "+49 176 12345678";
           n0:primaryTopic pro:card.
       `
+
       const firstEmailFileResp = `\
         @prefix pro: <./>.
         @prefix n0: <http://xmlns.com/foaf/0.1/>.
@@ -80,24 +99,43 @@ describe('solidAgentAgent', () => {
         @prefix n0: <http://xmlns.com/foaf/0.1/>.
         @prefix rd: <http://www.w3.org/2000/01/rdf-schema#>.
         @prefix schem: <https://schema.org/>.
+        @prefix dbp: <http://dbpedia.org/page/>.
 
         pro:card
           a n0:PersonalProfileDocument;
           n0:primaryTopic <#me>.
+
         <#me>
           a n0:Person;
-          n0:mbox [ rd:seeAlso pro:email123; schem:identifier "123" ];
-          n0:mbox [ rd:seeAlso pro:email456; schem:identifier "456" ];
-          n0:phone [ rd:seeAlso pro:phone123; schem:identifier "123" ];
-          n0:mbox "test3@jolocom.com";
-          n0:phone "+49 157 11111111";
-          n0:name "Test".`
+          n0:name "Test";
+          n0:mbox <#email123>;
+          n0:mbox <#email456>;
+          n0:phone <#phone123>;
+          dbp:Identity_document <#idCard123>.
+
+        <#email123>
+          schem:identifier "123";
+          rd:seeAlso <https://test.com/profile/email123>.
+
+        <#email456>
+          schem:identifier "456";
+          rd:seeAlso <https://test.com/profile/email456>.
+
+        <#idCard123>
+          schem:identifier "123";
+          rd:seeAlso <https://test.com/profile/idCard123>.
+
+        <#phone123>
+          schem:identifier "123";
+          rd:seeAlso <https://test.com/profile/phone123>.
+      `
 
       const respMap = {
         [WEBID]: userCardResp,
         'https://test.com/profile/email123': firstEmailFileResp,
         'https://test.com/profile/email456': secondEmailFileResp,
-        'https://test.com/profile/phone123': firstPhoneFileResp
+        'https://test.com/profile/phone123': firstPhoneFileResp,
+        'https://test.com/profile/idCard123': firstIdCardFileResp
       }
 
       const expectedUserInfo = {
@@ -111,11 +149,6 @@ describe('solidAgentAgent', () => {
             number: '+49 176 12345678',
             verified: false,
             id: '123'
-          },
-          {
-            id: null,
-            verified: false,
-            number: '+49 157 11111111'
           }],
           email: [{
             address: 'test@jolocom.com',
@@ -126,27 +159,31 @@ describe('solidAgentAgent', () => {
             address: 'test2@jolocom.com',
             verified: false,
             id: '456'
-          },
-          {
-            address: 'test3@jolocom.com',
-            verified: false,
-            id: null
           }]
         },
         Reputation: 0,
-        passport: {
-          number: null,
-          givenName: null,
-          familyName: null,
-          birthDate: null,
-          gender: null,
-          street: null,
-          streetAndNumber: null,
-          city: null,
-          zip: null,
-          state: null,
-          country: null
-        }
+        passports: [],
+        idCards: [{
+          id: '123',
+          verified: false,
+          idCardFields: {
+            number: '12312421',
+            expirationDate: '1.1.18',
+            firstName: 'Annika',
+            lastName: 'Hamman',
+            gender: 'female',
+            birthDate: '1.1.88',
+            birthPlace: 'Wien',
+            birthCountry: 'Austria',
+            physicalAddress: {
+              streetWithNumber: 'Waldemarstr. 97a',
+              zip: '1234',
+              city: 'Berlin',
+              state: 'Berlin',
+              country: 'Germany'
+            }
+          }
+        }]
       }
 
       const solidAgent = new SolidAgent()
@@ -200,7 +237,7 @@ pho:owner
 
     const mockHttpAgent = {
       patch: async (url, toDelete, toInsert) => {
-        it('Should patch the profile file correctly', (done) => {
+        it('Should attempt to patch the correct file', (done) => {
           expect(url).to.equal(WEBID)
           done()
         })
@@ -210,32 +247,35 @@ pho:owner
           done()
         })
 
-        it('Should patch the card with three phone triples', (done) => {
-          expect(toInsert.length).to.deep.equal(3)
+        it('Should append three tripples', done => {
+          expect(toInsert.length).to.equal(3)
           done()
         })
 
-        it('should add a bNode as an phone to the card', (done) => {
-          expect(toInsert[0].object.termType).to.equal('BlankNode')
-          expect(toInsert[0].predicate).to.deep.equal(PRED.mobile)
-          expect(toInsert[0].subject.value).to.equal(WEBID)
-          done()
-        })
+        it('Should contain the correct add query', (done) => {
+          expect(toInsert[0].subject.value)
+            .to.equal('https://test.com/profile/card')
+          expect(toInsert[0].predicate)
+            .to.deep.equal(PRED.mobile)
+          expect(toInsert[0].object.value)
+            .to.equal('https://test.com/profile/card#phone123')
 
-        it('should assign correct bNode identifier', (done) => {
-          expect(toInsert[1].object.value).to.equal('123')
-          expect(toInsert[1].predicate).to.deep.equal(PRED.identifier)
-          expect(toInsert[1].subject.id).to.equal(0)
-          done()
-        })
+          expect(toInsert[1].subject.value)
+            .to.equal('https://test.com/profile/card#phone123')
+          expect(toInsert[1].predicate)
+            .to.deep.equal(PRED.identifier)
+          expect(toInsert[1].object.value)
+            .to.equal('123')
 
-        it('should identify the seeAlso URI for the Blank Node', (done) => {
+          expect(toInsert[2].subject.value)
+            .to.equal('https://test.com/profile/card#phone123')
+          expect(toInsert[2].predicate)
+            .to.deep.equal(PRED.seeAlso)
           expect(toInsert[2].object.value)
-          .to.equal(phoneEntryUrl)
-          expect(toInsert[2].predicate).to.deep.equal(PRED.seeAlso)
-          expect(toInsert[2].subject.id).to.deep.equal(0)
+            .to.equal('https://test.com/profile/phone123')
           done()
         })
+
         return
       },
 
@@ -308,7 +348,7 @@ em:owner
     solidAgent._genRandomAttrId = () => { return '123' }
     const mockHttpAgent = {
       patch: async (url, toDelete, toInsert) => {
-        it('Should patch the profile file correctly', (done) => {
+        it('Should patch the correct file', (done) => {
           expect(url).to.equal(WEBID)
           done()
         })
@@ -323,25 +363,23 @@ em:owner
           done()
         })
 
-        it('should add a bNode as an email to the card', (done) => {
-          expect(toInsert[0].object.termType).to.equal('BlankNode')
-          expect(toInsert[0].predicate).to.deep.equal(PRED.email)
+        it('Should patch with the correct email triples', (done) => {
           expect(toInsert[0].subject.value).to.equal(WEBID)
-          done()
-        })
+          expect(toInsert[0].predicate).to.deep.equal(PRED.email)
+          expect(toInsert[0].object.value)
+            .to.equal('https://test.com/profile/card#email123')
 
-        it('should assign correct bNode identifier', (done) => {
-          expect(toInsert[1].object.value).to.equal('123')
+          expect(toInsert[1].subject.value)
+            .to.equal('https://test.com/profile/card#email123')
           expect(toInsert[1].predicate).to.deep.equal(PRED.identifier)
-          expect(toInsert[1].subject.id).to.equal(1)
-          done()
-        })
+          expect(toInsert[1].object.value)
+            .to.equal('123')
 
-        it('should identify the seeAlso URI for the Blank Node', (done) => {
-          expect(toInsert[2].object.value)
-          .to.equal(emailEntryUrl)
+          expect(toInsert[2].subject.value)
+            .to.equal('https://test.com/profile/card#email123')
           expect(toInsert[2].predicate).to.deep.equal(PRED.seeAlso)
-          expect(toInsert[2].subject.id).to.equal(1)
+          expect(toInsert[2].object.value)
+            .to.equal('https://test.com/profile/email123')
           done()
         })
         return
@@ -372,5 +410,219 @@ em:owner
     it('Should put both the email entry file, and it\'s acl ', () => {
       expect(entryPut && entryAclPut).to.be.true
     })
+  })
+
+  describe('#setIdCard', () => {
+    const idCardEntryUrl = 'https://test.com/profile/idCard123'
+    const idCardEntryAclUrl = 'https://test.com/profile/idCard123.acl'
+    const idCardEntryBody = `\
+@prefix : <#>.
+@prefix pro: <./>.
+@prefix p: <http://dbpedia.org/page/>.
+@prefix SCH: <http://voag.linkedmodel.org/2.0/doc/2015/SCHEMA_voag-v2.0#>.
+@prefix schem: <https://schema.org/>.
+@prefix n0: <http://xmlns.com/foaf/0.1/>.
+@prefix n: <https://www.w3.org/2006/vcard/ns#>.
+@prefix ont: <http://dbpedia.org/ontology/>.
+@prefix per: <https://www.w3.org/ns/person#>.
+
+pro:idCard123
+    a p:Identity_document;
+    SCH:voag_ownedBy :owner;
+    schem:expires "1.1.18";
+    schem:identifier "12312421".
+:owner
+    n0:familyName "Hamman";
+    n0:gender n:Female;
+    n0:givenName "Annika";
+    schem:address
+            [
+                ont:city "Berlin";
+                ont:country "Germany";
+                ont:state "Berlin";
+                n:postal-code "1234";
+                n:street-address "Waldemarstr. 97a"
+            ];
+    schem:birthDate "1.1.88";
+    schem:birthPlace "Wien";
+    per:countryOfBirth "Austria".
+`
+
+    const idCardEntryAclBody = `\
+@prefix : <#>.
+@prefix idC: <idCard123.acl#>.
+@prefix n0: <http://www.w3.org/ns/auth/acl#>.
+@prefix pro: <./>.
+
+idC:owner
+    a n0:Authorization;
+    n0:accessTo pro:idCard123;
+    n0:agent pro:card;
+    n0:mode n0:Control, n0:Read, n0:Write.
+`
+
+    const putArgumentsMap = {
+      [idCardEntryUrl]: {
+        name: 'entry file',
+        expectedBody: idCardEntryBody,
+        wasPut: false
+      },
+      [idCardEntryAclUrl]: {
+        name: 'acl file',
+        expectedBody: idCardEntryAclBody,
+        wasPut: false
+      }
+    }
+
+    const solidAgent = new SolidAgent()
+    solidAgent._genRandomAttrId = () => { return '123' }
+
+    const mockHttpAgent = {
+      patch: async (url, toDelete, toInsert) => {
+        it('Should patch the correct file', (done) => {
+          expect(url).to.equal(WEBID)
+          done()
+        })
+
+        it('Should not attempt to delete anything', (done) => {
+          expect(toDelete).to.deep.equal([])
+          done()
+        })
+
+        it('Should patch the card with three email triples', (done) => {
+          expect(toInsert.length).to.deep.equal(3)
+          done()
+        })
+
+        it('Should patch with the correct email triples', (done) => {
+          expect(toInsert[0].subject.value).to.equal(WEBID)
+          expect(toInsert[0].predicate).to.deep.equal(PRED.idCard)
+          expect(toInsert[0].object.value)
+            .to.equal('https://test.com/profile/card#idCard123')
+
+          expect(toInsert[1].subject.value)
+            .to.equal('https://test.com/profile/card#idCard123')
+          expect(toInsert[1].predicate).to.deep.equal(PRED.identifier)
+          expect(toInsert[1].object.value)
+            .to.equal('123')
+
+          expect(toInsert[2].subject.value)
+            .to.equal('https://test.com/profile/card#idCard123')
+          expect(toInsert[2].predicate).to.deep.equal(PRED.seeAlso)
+          expect(toInsert[2].object.value)
+            .to.equal('https://test.com/profile/idCard123')
+          done()
+        })
+        return
+      },
+
+      put: async (url, body) => {
+        const {expectedBody, name} = putArgumentsMap[url]
+        it(`Should put the ${name} to correct url`, (done) => {
+          expect(putArgumentsMap[url]).to.not.be.undefined
+          done()
+        })
+
+        it(`Should put the correct ${name}`, (done) => {
+          expect(body).to.equal(expectedBody)
+          done()
+        })
+        putArgumentsMap[url].wasPut = true
+        return
+      }
+    }
+
+    solidAgent.http = mockHttpAgent
+    solidAgent.setIdCard(WEBID, {
+      number: '12312421',
+      expirationDate: '1.1.18',
+      firstName: 'Annika',
+      lastName: 'Hamman',
+      gender: 'female',
+      birthDate: '1.1.88',
+      birthPlace: 'Wien',
+      birthCountry: 'Austria',
+      physicalAddress: {
+        streetWithNumber: 'Waldemarstr. 97a',
+        zip: '1234',
+        city: 'Berlin',
+        state: 'Berlin',
+        country: 'Germany'
+      }
+    })
+
+    const entryPut = putArgumentsMap[idCardEntryUrl].wasPut
+    const entryAclPut = putArgumentsMap[idCardEntryAclUrl].wasPut
+
+    it('Should put both the email entry file, and it\'s acl ', () => {
+      expect(entryPut && entryAclPut).to.be.true
+    })
+  })
+
+  describe('#deleteEntry', () => {
+    const entryUrl = 'https://test.com/profile/email123'
+    const entryAclUrl = 'https://test.com/profile/email123.acl'
+    const deleteArgumentsMap = {
+      [entryUrl]: {
+        name: 'entry file',
+        wasDeleted: false
+      },
+      [entryAclUrl]: {
+        name: 'acl file',
+        wasDeleted: false
+      }
+    }
+    const mockHttpAgent = {
+      delete: async (url) => {
+        const {name} = deleteArgumentsMap[url]
+        it(`Should put the ${name} to correct url`, (done) => {
+          expect(deleteArgumentsMap[url]).to.not.be.undefined
+          done()
+        })
+        deleteArgumentsMap[url].wasDeleted = true
+        return
+      },
+      patch: async (url, toDelete, toInsert) => {
+        it('Should patch the correct file', (done) => {
+          expect(url).to.equal(WEBID)
+          done()
+        })
+        it('Should not attempt to insert anything', (done) => {
+          expect(toInsert).to.deep.equal(undefined)
+          done()
+        })
+      }
+    }
+    const solidAgent = new SolidAgent()
+    solidAgent.http = mockHttpAgent
+    solidAgent.deleteEntry(WEBID, 'email', '123')
+
+    const entryDelete = deleteArgumentsMap[entryUrl].wasDeleted
+    const entryAclDelete = deleteArgumentsMap[entryAclUrl].wasDeleted
+
+    it('Should delete both the entry file, and it\'s acl ', () => {
+      expect(entryDelete && entryAclDelete).to.be.true
+    })
+  })
+  describe('#updateEntry', () => {
+    const entryUrl = 'https://test.com/profile/email123'
+    const putArgumentsMap = {
+      [entryUrl]: {
+        name: 'entry file',
+        wasPut: false
+      }
+    }
+    const mockHttpAgent = {
+      put: async (url) => {
+        const {name} = putArgumentsMap[url]
+        it(`Should put the ${name} to correct url`, (done) => {
+          expect(putArgumentsMap[url]).to.not.be.undefined
+          done()
+        })
+      }
+    }
+    const solidAgent = new SolidAgent()
+    solidAgent.http = mockHttpAgent
+    solidAgent.updateEntry(WEBID, 'email', '123', EMAIL)
   })
 })

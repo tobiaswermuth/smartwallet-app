@@ -4,7 +4,6 @@ import { Router, Route, IndexRoute } from 'react-router'
 import App from 'components/app.jsx'
 import Index from 'components/index.jsx'
 
-import Login from 'components/accounts/login'
 import Signup from 'components/accounts/signup'
 import ForgotPassword from 'components/accounts/forgot-password'
 import ChangePassword from 'components/accounts/change-password'
@@ -32,12 +31,15 @@ import WalletHomeScreen from 'components/wallet/screens/home'
 import WalletMoneyScreen from 'components/wallet/screens/money'
 import WalletIdentityScreen from 'components/wallet/screens/identity'
 import WalletContactScreen from 'components/wallet/screens/contact'
-
+import WalletIdCardScreen from 'components/wallet/screens/id-card'
+import CountrySelectScreen from 'components/wallet/screens/country-select'
 import EmailConfirmationScreen from
 'components/email-confirmation/screens/email-confirmation'
 
-import ExpertLoginPassphraseScreen from 'components/login/screens/phrase'
-import ExpertLoginPinScreen from 'components/login/screens/pin'
+import WalletLogin from 'components/wallet-login'
+import LaymanLoginScreen from 'components/wallet-login/screens/layman'
+import ExpertLoginPassphraseScreen from 'components/wallet-login/screens/phrase'
+import LoginPinScreen from 'components/wallet-login/screens/pin'
 
 export const routes = {
   login: '/login',
@@ -79,13 +81,18 @@ function getRoutes() {
 
     <Route path="wallet/identity/contact"
       component={WalletContactScreen} />
+    <Route path="wallet/identity/id-card"
+      component={WalletIdCardScreen} />
+    <Route path="wallet/identity/passport/add"
+      component={WalletIdCardScreen} />
+    <Route path="wallet/identity/country-select"
+      component={CountrySelectScreen} />
     <Route path="wallet" component={WalletTabsScreen}>
       <IndexRoute component={WalletHomeScreen} />
       <Route path="identity"
         component={WalletIdentityScreen} />
       <Route path="money"
         component={WalletMoneyScreen} />
-
     </Route>
 
     <Route path="profile" component={Profile} />
@@ -93,9 +100,11 @@ function getRoutes() {
     <Route path="forgot-password" component={ForgotPassword} />
     <Route path="change-password/:username/:token" component={ChangePassword} />
     <Route path="signup" component={Signup} />
-    <Route path="login" component={Login} />
-    <Route path="/login/expert" component={ExpertLoginPassphraseScreen} />
-    <Route path="/login/expert/pin-entry" component={ExpertLoginPinScreen} />
+    <Route path="login" component={WalletLogin} />
+    <Route path="login/expert" component={ExpertLoginPassphraseScreen} />
+    <Route path="login/layman" component={LaymanLoginScreen} />
+    <Route path="login/pin-entry" component={LoginPinScreen} />
+
     <Route path="verify-email" component={EmailConfirmationScreen} />
   </Route>)
 }

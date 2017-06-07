@@ -1,7 +1,7 @@
 import React from 'react'
 import Radium from 'radium'
 import { connect } from 'redux/utils'
-import { RaisedButton, TextField, IconButton, AppBar } from 'material-ui'
+import { IconButton, AppBar } from 'material-ui'
 import { Link } from 'react-router'
 
 import Utils from 'lib/util'
@@ -9,6 +9,9 @@ import Utils from 'lib/util'
 import {theme} from 'styles'
 
 import {routes} from 'routes'
+
+import LoginForm from 'components/common/login-form'
+import {Container} from '../structure'
 
 // login for development
 const Login = connect({
@@ -65,25 +68,12 @@ const Login = connect({
 
   getStyles() {
     let styles = {
-      container: {
-        textAlign: 'center',
-        background: '#f8f9fb',
-        paddingBottom: '40px',
-        boxSizing: 'border-box',
-        minHeight: '100%'
-      },
       header: {
         padding: '40px'
       },
-      logo: {
-        fontSize: '18px',
-        fontWeight: '400',
-        textAlign: 'center',
-        textTransform: 'uppercase'
-      },
       logoImg: {
         maxWidth: '80%',
-        width: '100px'
+        width: '200px'
       },
       title: {
         fontWeight: 'normal',
@@ -93,7 +83,7 @@ const Login = connect({
       },
       content: {
         width: '300px',
-        maxWidth: '90%',
+        maxWidth: '100%',
         padding: '0px 20px 20px',
         margin: '10px auto 20px auto',
         boxSizing: 'border-box',
@@ -104,21 +94,12 @@ const Login = connect({
         marginBottom: '1em',
         color: theme.jolocom.gray1
       },
-      button: {
-        width: '100%'
-      },
       help: {
         color: theme.jolocom.gray1
       },
       link: {
         color: theme.palette.accent1Color,
         fontWeight: 'bold'
-      },
-      forgotPassword: {
-        float: 'right',
-        padding: '10px',
-        color: '#7B8288',
-        fontSize: '0.75em'
       }
     }
 
@@ -127,7 +108,7 @@ const Login = connect({
   render() {
     let styles = this.getStyles()
     return (
-      <div style={styles.container}>
+      <Container>
         <AppBar
           title="Log in"
           style={{boxShadow: 'none'}}
@@ -137,8 +118,8 @@ const Login = connect({
               arrow_back
           </IconButton>}
           />
-        <div style={styles.logo}>
-          <img src="/img/logo.svg" style={styles.logoImg} />
+        <div>
+          <img src="/img/JOLOCOM_logo-01.svg" style={styles.logoImg} />
         </div>
         <div style={{paddingBottom: '8px', color: '#e8540c'}}>
           {this.props.login.failureMsg}
@@ -152,39 +133,19 @@ const Login = connect({
           </p>
         : ''
         }
-        <form style={styles.content} onSubmit={this.login}>
-          <div style={{marginBottom: '20px'}}>
-            <div>
-              {/** TODO Give user feedback when user already exists **/}
-              <TextField
-                floatingLabelText="Username"
-                value={this.props.login.username}
-                type="text"
-                autoCorrect="off"
-                autoCapitalize="none"
-                autoComplete="none"
-                errorText={this.props.login.userErrorMsg}
-                onChange={this._handleUsernameChange} />
-              <TextField
-                floatingLabelText="Password"
-                type="password"
-                errorText={this.props.login.pwErrorMsg}
-                onChange={this._handlePasswordChange} />
-              <Link
-                to="/forgot-password"
-                style={styles.forgotPassword}>Forgot password?</Link>
-            </div>
-          </div>
-          <RaisedButton
-            type="submit"
-            secondary
-            style={styles.button}
-            label="Login" />
-        </form>
+        <LoginForm
+          onSubmit={this.login}
+          username={this.props.login.username}
+          usernameError={this.props.login.userErrorMsg}
+          onUsernameChange={this._handleUsernameChange}
+          passwordError={this.props.login.pwErrorMsg}
+          onPasswordChange={this._handlePasswordChange}
+        />
+
         <p style={styles.help}>Don't have an account yet?&nbsp;
           <Link to={routes.signup} style={styles.link}>Sign up</Link>.
         </p>
-      </div>
+      </Container>
     )
   }
 })))
