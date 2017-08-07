@@ -15,6 +15,11 @@ describe('# Wallet contact redux module', () => {
       expect(dispatch.called).to.be.true
       expect(dispatch.calls).to.deep.equal([{
         args: [{
+          type: 'little-sister/wallet/contact/SET_RELOAD_FROM_BACKEND',
+          value: true
+        }]
+      }, {
+        args: [{
           payload: {
             args: ['/wallet/identity'],
             method: 'push'
@@ -278,8 +283,7 @@ describe('# Wallet contact redux module', () => {
           }
         }})
       })
-      it('updateInformation should not change a valid original telNum field ' +
-      'value', () => {
+      it('updateInformation should not change a valid original telNum field value', () => { // eslint-disable-line max-len
         const oldState = Immutable.fromJS({
           information: {
             originalInformation: {
@@ -302,8 +306,7 @@ describe('# Wallet contact redux module', () => {
           index: 0
         }
         const newState = reducer(oldState, action)
-        expect(newState.toJS())
-        .to.deep.equal(oldState.toJS())
+        expect(newState.toJS()).to.deep.equal(oldState.toJS())
       })
     })
   })

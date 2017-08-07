@@ -1,6 +1,6 @@
 import React from 'react'
 import Radium from 'radium'
-
+import {fade} from 'material-ui/utils/colorManipulator'
 import {theme} from 'styles'
 import {IconButton, AppBar} from 'material-ui'
 import HoverButton from 'components/common/hover-button.jsx'
@@ -10,9 +10,9 @@ const STYLES = {
     margin: '42px 0 16px 0'
   },
   title: {
-    color: '#fff',
-    fontSize: '24px',
-    fontWeight: '300',
+    color: theme.palette.alternateTextColor,
+    fontSize: theme.textStyles.headline.fontSize,
+    fontWeight: theme.textStyles.headline.fontWeight,
     margin: 0
   },
   bar: {
@@ -26,7 +26,8 @@ const STYLES = {
     borderRadius: '2px',
     padding: '16px',
     color: '#fff'
-  }
+  },
+  hoverColor: fade('#a4a4a3', 0.55)
 }
 
 const EditAppBar = ({title, onSave, onClose, loading}) => {
@@ -44,8 +45,8 @@ const EditAppBar = ({title, onSave, onClose, loading}) => {
       }
       iconElementRight={
         <HoverButton
-          backgroundColor={STYLES.bar.backgroundColor}
-          style={STYLES.appBarButton} hoverColor={STYLES.appBarButton.color}
+          backgroundColor={'#fff'}
+          style={STYLES.appBarButton} hoverColor={STYLES.hoverColor}
           onClick={() => { loading ? null : onSave() }}>
           {loading ? 'LOADING...' : 'SAVE'}
         </HoverButton>

@@ -49,25 +49,29 @@ const rdfHelper = {
 
       // Id card info
       g.add(subj, PRED.type, PRED.idCard)
-      g.add(subj, PRED.identifier, entryValue.number)
-      g.add(subj, PRED.expiresBy, entryValue.expirationDate)
+      g.add(subj, PRED.identifier, entryValue.number.value)
+      g.add(subj, PRED.expiresBy, entryValue.expirationDate.value)
       g.add(subj, PRED.ownedBy, ownerUrl)
 
       // Owner info
-      g.add(ownerUrl, PRED.givenName, entryValue.firstName)
-      g.add(ownerUrl, PRED.familyName, entryValue.lastName)
+      g.add(ownerUrl, PRED.givenName, entryValue.firstName.value)
+      g.add(ownerUrl, PRED.familyName, entryValue.lastName.value)
       g.add(ownerUrl, PRED.gender, gender)
-      g.add(ownerUrl, PRED.birthDate, entryValue.birthDate)
-      g.add(ownerUrl, PRED.birthPlace, entryValue.birthPlace)
-      g.add(ownerUrl, PRED.countryOfBirth, entryValue.birthCountry)
+      g.add(ownerUrl, PRED.birthDate, entryValue.birthDate.value)
+      g.add(ownerUrl, PRED.birthPlace, entryValue.birthPlace.value)
+      g.add(ownerUrl, PRED.countryOfBirth, entryValue.birthCountry.value)
       g.add(ownerUrl, PRED.address, addrBNode)
 
       // Owner address info
-      g.add(addrBNode, PRED.street, entryValue.physicalAddress.streetWithNumber)
-      g.add(addrBNode, PRED.zip, entryValue.physicalAddress.zip)
-      g.add(addrBNode, PRED.city, entryValue.physicalAddress.city)
-      g.add(addrBNode, PRED.state, entryValue.physicalAddress.state)
-      g.add(addrBNode, PRED.country, entryValue.physicalAddress.country)
+      g.add(
+        addrBNode,
+        PRED.street,
+        entryValue.physicalAddress.streetWithNumber.value
+      )
+      g.add(addrBNode, PRED.zip, entryValue.physicalAddress.zip.value)
+      g.add(addrBNode, PRED.city, entryValue.physicalAddress.city.value)
+      g.add(addrBNode, PRED.state, entryValue.physicalAddress.state.value)
+      g.add(addrBNode, PRED.country, entryValue.physicalAddress.country.value)
     }
 
     return rdf.serialize(undefined, g, entryFileUrl, 'text/turtle')
@@ -176,6 +180,50 @@ export default class SolidAgent {
     })
   }
 
+  retrieveConnectedServices() {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => resolve(({
+        loaded: false, failed: false, serviceNumber: 0,
+        services: [
+          {
+            deleted: false, label: 'label1', url: 'http://www.youtube.com',
+            id: '1', iconUrl: '/img/img_nohustle.svg',
+            sharedData: [
+              {attrType: 'phone', value: '17524', type: 'work', verified: false,
+                status: ''},
+              {attrType: 'phone', value: '45678', type: 'work', verified: true,
+                status: ''},
+              {attrType: 'phone', value: '96574', type: 'work', verified: true,
+                status: ''},
+              {attrType: 'email', value: 'test@test.test', verified: false,
+                status: ''}
+            ]
+          }, {
+            deleted: false,
+            label: 'label2',
+            url: 'http://www.youtube.com',
+            id: '2',
+            iconUrl: '/img/img_nohustle.svg',
+            sharedData: [{
+              attrType: 'email', value: 'test@test.test', verified: false,
+              status: ''
+            }]
+          }, {
+            deleted: false, id: '3', url: 'http://www.google.com',
+            label: 'label3', conUrl: '/img/img_nohustle.svg',
+            sharedData: [{attrType: '', value: '', verified: false, status: ''}]
+          }
+        ]
+      })), 2000)
+    })
+  }
+
+  deleteService(serviceId) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => { resolve(true) }, 2000)
+    })
+  }
+
   async _formatAccountInfo(webId, userTriples) {
     const profileData = Object.assign({}, this.defaultProfile)
 
@@ -213,7 +261,6 @@ export default class SolidAgent {
         propertyData.push(tmp)
       }
     }
-
     return propertyData
   }
 
@@ -269,6 +316,22 @@ export default class SolidAgent {
       return
     }
     return this._setEntry(webId, entryValue, 'phone')
+  }
+
+  setIdentityContractAddress(webId, entryValue) {
+    if (!webId || !entryValue) {
+      console.error('Invalid arguments')
+      return
+    }
+
+    const g = rdf.graph()
+    g.add(
+      rdf.sym(webId),
+      PRED.identityContractAddress,
+      rdf.lit(entryValue)
+    )
+
+    return this.http.patch(webId, [], g.statements)
   }
 
   setPassport(webId, passport) {

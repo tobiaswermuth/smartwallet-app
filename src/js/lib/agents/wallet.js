@@ -1,24 +1,45 @@
 import * as settings from 'settings'
 import {WalletManager} from 'smartwallet-contracts'
+import HTTPAgent from 'lib/agents/http'
 
 // only for testing testSeed has some ether on ropsten testnet
-const TEST_SEED = 'mandate print cereal style toilet hole' +
+export const TEST_SEED = 'mandate print cereal style toilet hole' +
   ' cave mom heavy fork network indoor'
 
 export default class WalletAgent {
   constructor() {
     this._manager = new WalletManager(settings.blockchain)
+    this._httpAgent = new HTTPAgent({proxy: false})
   }
 
   generateSeedPhrase(entropy) {
     let seed = this._manager.generateSeedPhrase(entropy)
     // @TODO remove this
-    seed = TEST_SEED
+    // seed = TEST_SEED
+
     return seed
   }
 
+  retrieveEtherPrice() { // returns {ethForEur: <number>}
+    return this._httpAgent.get(
+      settings.blockchain.jolocomEtherAddress +
+      '/exchange-rate/ether'
+    )
+  }
+
+  buyEther({stripeToken, walletAddress}) {
+    return this._httpAgent.post(
+      'https://verification.jolocom.com/ether/buy/ether',
+      JSON.stringify({stripeToken: JSON.stringify(stripeToken), walletAddress}),
+      {
+        'Content-type': 'application/json'
+      },
+      {credentials: 'omit'}
+    )
+  }
+
   retrieveSeedPhrase({email, password}) {
-    return this._manager.retrieveSeedPhrase({email, password})
+    return this._manager._seedStorage.getSeed({email, password})
   }
 
   registerWithSeedPhrase({userName, seedPhrase, pin}) {
@@ -27,9 +48,9 @@ export default class WalletAgent {
     })
   }
 
-  registerWithCredentials({userName, email, password, pin}) {
+  registerWithCredentials({userName, email, password, pin, seedPhrase}) {
     return this._manager.registerWithCredentials({
-      userName, email, password, pin
+      userName, email, password, pin, seedPhrase
     })
   }
 
@@ -40,36 +61,8 @@ export default class WalletAgent {
   loginWithCredentials({email, password, pin}) {
     return this._manager.loginWithCredentials({email, password, pin})
   }
-}
-// TODO: DELETE THIS CLASS WHEN EDIT-CONTACT-UTIL and
-// Login-webId exchange is updated
-export class Wallet {
-  constructor() {
-    this.webId = localStorage.getItem('jolocom.webId')
-    this.lightWallet = 'something'
-  }
 
-  updatePhone(phone) {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        resolve()
-      }, 2000)
-    })
-  }
-
-  setPhone(phone) {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        resolve()
-      }, 2000)
-    })
-  }
-
-  startConfirmEmail({email}) {
-    return this._verification.startVerifyingEmail({webID: this.webID, email})
-  }
-
-  finishConfirmEmail({email, code}) {
-    return this._verification.verifyEmail({webID: this.webID, email, code})
+  loginFromSerialized(serialized) {
+    return this._manager.loginFromSerialized(serialized)
   }
 }

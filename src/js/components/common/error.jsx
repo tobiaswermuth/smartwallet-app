@@ -5,7 +5,7 @@ import {
   Block,
   Footer,
   SideNote
-} from '../../structure'
+} from '../structure'
 import {theme} from 'styles'
 
 import {
@@ -17,8 +17,9 @@ const STYLES = {
     marginTop: '100px'
   },
   greeting: {
-    fontSize: '20px',
-    color: theme.palette.textColor
+    fontSize: theme.textStyles.sectionheader.fontSize,
+    fontWeight: theme.textStyles.sectionheader.fontWeight,
+    color: theme.textStyles.sectionheader.color
   },
   issue: {
     fontSize: '40px',
@@ -50,7 +51,7 @@ export default class WalletError extends React.Component {
         <Footer>
           <FlatButton label={this.props.buttonLabel}
             onClick={() => { this.props.onClick() }}>
-              this.props.children
+              {this.props.children}
           </FlatButton>
         </Footer>
       </Container>

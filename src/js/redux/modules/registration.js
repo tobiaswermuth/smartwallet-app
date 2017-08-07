@@ -110,12 +110,7 @@ const actions = module.exports = makeActions('registration', {
         if (!pinState.get('valid')) {
           return
         }
-
-        if (pinState.get('confirm')) {
-          dispatch(actions.goForward())
-        } else {
-          dispatch(actions.setPinConfirm(true))
-        }
+        dispatch(actions.goForward())
       }
     }
   },
@@ -166,29 +161,72 @@ const actions = module.exports = makeActions('registration', {
     expectedParams: [],
     async: true,
     creator: (params) => {
-      return (dispatch, getState) => {
+      return (dispatch, getState, {services, backend}) => {
         const state = getState().get('registration').toJS()
-        dispatch(actions.registerWallet.buildAction(params, (backend) => {
+        dispatch(actions.registerWallet.buildAction(params, async () => {
           const userType = state.userType.value
           if (userType === 'expert') {
-            return backend.wallet.registerWithSeedPhrase({
+            const { wallet } = await services.auth.registerWithSeedPhrase({
               userName: state.username.value,
               seedPhrase: state.passphrase.phrase,
               pin: state.pin.value
-            }).then((params) => {
-              dispatch(router.pushRoute('/wallet'))
-              return params
             })
+
+            await backend.accounts.solidRegister(
+              state.username.value,
+              state.passphrase.phrase,
+              wallet.webIDPrivateKey
+            )
+
+            await backend.accounts.solidLogin(
+              state.username.value,
+              state.passphrase.phrase,
+              wallet.webIDPrivateKey
+            )
+
+            await backend.solid.setIdentityContractAddress(
+              wallet.webId,
+              wallet.identityAddress
+            )
+
+            dispatch(router.pushRoute('/wallet'))
+            return
           } else {
-            return backend.wallet.registerWithCredentials({
+            console.log('layman registration')
+            // return true
+            // return services.auth.registerWithCredentials({
+            //   userName: state.username.value,
+            //   email: state.email.value,
+            //   password: state.password.value,
+            //   pin: state.pin.value
+            // })
+            const { wallet } = await services.auth.registerWithCredentials({
               userName: state.username.value,
               email: state.email.value,
               password: state.password.value,
-              pin: state.pin.value
-            }).then((params) => {
-              dispatch(router.pushRoute('/wallet'))
-              return params
+              pin: state.pin.value,
+              seedPhrase: state.passphrase.phrase
             })
+
+            await backend.accounts.solidRegister(
+              state.username.value,
+              state.passphrase.phrase,
+              wallet.webIDPrivateKey
+            )
+
+            await backend.accounts.solidLogin(
+              state.username.value,
+              state.passphrase.phrase,
+              wallet.webIDPrivateKey
+            )
+
+            await backend.solid.setIdentityContractAddress(
+              wallet.webId,
+              wallet.identityAddress
+            )
+
+            dispatch(router.pushRoute('/wallet'))
+            return
           }
         })
       )
@@ -363,7 +401,7 @@ module.exports.default = (state = initialState, action = {}) => {
     case actions.registerWallet.id_success:
       return state.mergeDeep({
         wallet: {
-          registering: false,
+          registering: true,
           registered: true
         }
       })

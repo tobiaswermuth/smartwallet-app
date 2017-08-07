@@ -15,7 +15,7 @@ const STYLES = {
   },
   addBtn: {
     position: 'absolute',
-    top: '11px',
+    top: '12.5px',
     right: '8px'
   },
   iconCreate: {
@@ -26,13 +26,15 @@ const STYLES = {
   },
   infoHeader: {
     textAlign: 'left',
-    color: theme.palette.textColor,
+    color: theme.textStyles.sectionheader.color,
+    fontSize: theme.textStyles.sectionheader.fontSize,
+    fontWeight: theme.textStyles.sectionheader.fontWeight,
     marginBottom: '15px',
     display: 'inline-block'
   },
   item: {
     alignItems: 'center',
-    paddingLeft: '16px',
+    padding: '0 0 0 54px',
     display: 'inline-block',
     verticalAlign: 'top',
     width: '100%',

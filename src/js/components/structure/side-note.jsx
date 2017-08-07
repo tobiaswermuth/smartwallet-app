@@ -4,10 +4,12 @@ import Radium from 'radium'
 import {theme} from 'styles'
 
 const STYLE = {
-  fontSize: '10pt',
-  color: theme.jolocom.gray1,
+  fontSize: theme.textStyles.textCopy.fontSize,
+  fontWeight: theme.textStyles.textCopy.fontWeight,
+  margin: '0 8px 0 8px',
+  color: theme.textStyles.textCopy.color,
   '@media screen and (min-width: 1200px)': {
-    fontSize: '14pt'
+    fontSize: '13pt'
   }
 }
 

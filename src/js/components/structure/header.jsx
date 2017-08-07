@@ -5,12 +5,15 @@ import {theme} from 'styles'
 
 const STYLES = {
   header: {
-    margin: '42px 0 16px 0'
+    margin: '62px 62px 16px 62px',
+    '@media screen and (max-width: 500px)': {
+      margin: '42px 16px 16px 16px'
+    }
   },
   title: {
-    color: theme.jolocom.gray1,
-    fontSize: '18pt',
-    fontWeight: '100',
+    color: theme.textStyles.headline.color,
+    fontSize: theme.textStyles.headline.fontSize,
+    fontWeight: theme.textStyles.headline.fontWeight,
     margin: 0,
     '@media screen and (min-width: 1200px)': {
       fontSize: '24pt'

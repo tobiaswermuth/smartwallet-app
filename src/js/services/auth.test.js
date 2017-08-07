@@ -1,22 +1,19 @@
 import {expect} from 'chai'
 import AuthService from './auth'
-import {Wallet} from '../lib/agents/wallet'
 import {stub} from '../../../test/utils'
 
 describe('#AuthService', () => {
   describe('General Instance Properties', () => {
-    it('should set currentUser.wallet to a Wallet Instance', () => {
+    it('should set currentUser null on init', () => {
       const auth = new AuthService()
-      expect(auth.currentUser.wallet).to.be.instanceof(Wallet)
+      expect(auth.currentUser).to.be.null
     })
   })
   describe('registerWithSeedPhrase', () => {
     it('should call backend registerWithSeedPhrase with the proper params',
     () => {
       const backend = {
-        wallet: {
-          registerWithSeedPhrase: stub().returnsAsync('RegSeed')
-        }
+        registerWithSeedPhrase: stub().returnsAsync('RegSeed')
       }
       const registration = {
         userName: 'bigly',
@@ -28,8 +25,8 @@ describe('#AuthService', () => {
         .deep.equal({
           wallet: 'RegSeed'
         })
-      expect(backend.wallet.registerWithSeedPhrase.called).to.be.true
-      expect(backend.wallet.registerWithSeedPhrase.calls).to.deep.equal([{
+      expect(backend.registerWithSeedPhrase.called).to.be.true
+      expect(backend.registerWithSeedPhrase.calls).to.deep.equal([{
         args: [{
           userName: 'bigly',
           seedPhrase: 'whoop',
@@ -39,13 +36,15 @@ describe('#AuthService', () => {
     })
   })
   describe('registerWithCredentials', () => {
-    it('should call backend registerWithCredentials with proper params', () => {
+    it('should call backend registerWithCredentials with proper params',
+    () => {
       const backend = {
-        wallet: {registerWithCredentials: stub().returnsAsync('RegPass')}
+        registerWithCredentials: stub().returnsAsync('RegPass')
       }
       const registration = {
         userName: 'bigly',
         email: 'j.j@j.c',
+        seedPhrase: 'bla bla',
         password: 'canyouseeme?',
         pin: '1234'
       }
@@ -54,11 +53,12 @@ describe('#AuthService', () => {
         .deep.equal({
           wallet: 'RegPass'
         })
-      expect(backend.wallet.registerWithCredentials.called).to.be.true
-      expect(backend.wallet.registerWithCredentials.calls).to.deep.equal([{
+      expect(backend.registerWithCredentials.called).to.be.true
+      expect(backend.registerWithCredentials.calls).to.deep.equal([{
         args: [{
           userName: 'bigly',
           email: 'j.j@j.c',
+          seedPhrase: 'bla bla',
           password: 'canyouseeme?',
           pin: '1234'
         }]
@@ -68,7 +68,7 @@ describe('#AuthService', () => {
   describe('loginWithSeedPhrase', () => {
     it('should call backend loginWithSeedPhrase with proper params', () => {
       const backend = {
-        wallet: {loginWithSeedPhrase: stub().returnsAsync('LogSeed')}
+        loginWithSeedPhrase: stub().returnsAsync('LogSeed')
       }
       const login = {
         seedPhrase: 'bigly',
@@ -79,8 +79,8 @@ describe('#AuthService', () => {
         .deep.equal({
           wallet: 'LogSeed'
         })
-      expect(backend.wallet.loginWithSeedPhrase.called).to.be.true
-      expect(backend.wallet.loginWithSeedPhrase.calls).to.deep.equal([{
+      expect(backend.loginWithSeedPhrase.called).to.be.true
+      expect(backend.loginWithSeedPhrase.calls).to.deep.equal([{
         args: [{
           seedPhrase: 'bigly',
           pin: '1234'
@@ -88,10 +88,11 @@ describe('#AuthService', () => {
       }])
     })
   })
-  describe('loginWithCredentials', () => {
+  describe('logiWithCredentials', () => {
     it('should call backend loginWithCredentials with proper params', () => {
       const backend = {
-        wallet: {loginWithCredentials: stub().returnsAsync('LogPass')}
+        loginWithCredentials: stub().returnsAsync('LogPass'),
+        loginFromSerialized: stub()
       }
       const login = {
         email: 'j.j@j.c',
@@ -103,8 +104,8 @@ describe('#AuthService', () => {
         .deep.equal({
           wallet: 'LogPass'
         })
-      expect(backend.wallet.loginWithCredentials.called).to.be.true
-      expect(backend.wallet.loginWithCredentials.calls).to.deep.equal([{
+      expect(backend.loginWithCredentials.called).to.be.true
+      expect(backend.loginWithCredentials.calls).to.deep.equal([{
         args: [{
           email: 'j.j@j.c',
           password: 'canyouseeme?',
