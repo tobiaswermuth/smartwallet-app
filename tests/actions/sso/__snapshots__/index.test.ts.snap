@@ -1,0 +1,39 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SSO action creators cancelReceiving should navigate to home screen and reset selected account 1`] = `
+Array [
+  Object {
+    "type": "RESET_SELECTED",
+  },
+  Object {
+    "actions": Array [
+      Object {
+        "routeName": "Home",
+        "type": "Navigation/NAVIGATE",
+      },
+    ],
+    "index": 0,
+    "key": undefined,
+    "type": "Navigation/RESET",
+  },
+]
+`;
+
+exports[`SSO action creators cancelSSO should navigate to home screen and clear the Credential Request 1`] = `
+Array [
+  Object {
+    "type": "CLEAR_CREDENTIAL_REQUEST",
+  },
+  Object {
+    "actions": Array [
+      Object {
+        "routeName": "Home",
+        "type": "Navigation/NAVIGATE",
+      },
+    ],
+    "index": 0,
+    "key": undefined,
+    "type": "Navigation/RESET",
+  },
+]
+`;
